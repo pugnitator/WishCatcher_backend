@@ -1,5 +1,5 @@
 import { Router } from "express";
-import WishController from "../controllers/wishController.js";
+import WishController from "../controllers/WishController.js";
 
 const wishRouter = new Router();
 
