@@ -93,7 +93,6 @@ class UserController {
 
     try {
       const { userId } = req.user;
-
       console.log(userId);
 
       const user = await User.findById(userId);

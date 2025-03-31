@@ -3,20 +3,25 @@ import Wish from "../db_models/Wish.js";
 class WishController {
   async createWish(req, res) {
     try {
-      const { name, state, giftURL, comment, tags, ownerId, reservedBy } = req.body;
+      const { name, giftURL, comment } = req.body;
+
+      console.log('reqUser', req.user, req.user.userId);
+      const ownerId = req.user.userId;
+
+      console.log('ownerId', ownerId);
+
       const wish = new Wish({
         name,
-        state,
         giftURL,
         comment,
-        tags,
         ownerId,
-        reservedBy,
       });
-      wish.save();
+
+      await wish.save();
 
       return res.json({ message: "Пожелание успешно создано" });
     } catch (e) {
+      console.error(e);
       res.status(400).json({ message: "Ошибка создания виша", error: e });
     }
   }
@@ -31,10 +36,29 @@ class WishController {
     }
   }
 
-  async getWishesByUser(req, res) {
+  async getMyWishes(req, res) {
     try {
-      const { id: userId } = req.params;
+      const { userId } = req.user;
+      console.log(userId);
+
       const wishes = await Wish.find({ ownerId: userId });
+      return res.json(wishes);
+    } catch (e) {
+      res
+        .status(400)
+        .json({ message: "Ошибка получения списка вишей", error: e });
+    }
+  }
+
+  async getWishesByUser(req, res) {
+    console.log(req.user)
+    try {
+      const { userId } = req.user;
+      console.log(userId);
+
+      const wishes = await Wish.find({
+        ownerId: userId,
+      });
       return res.json(wishes);
     } catch (e) {
       res

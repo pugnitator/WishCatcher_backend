@@ -12,9 +12,9 @@ const Wish = new mongoose.Schema({
     },
     giftURL: {type: 'String'},
     comment: {type: 'String'},
-    tags: [String],
+    // tags: [String],
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    reservedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User'},
+    reservedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null},
 });
 
 export default mongoose.model('Wish', Wish);
