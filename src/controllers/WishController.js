@@ -5,10 +5,10 @@ class WishController {
     try {
       const { name, giftURL, comment } = req.body;
 
-      console.log('reqUser', req.user, req.user.userId);
+      console.log("reqUser", req.user, req.user.userId);
       const ownerId = req.user.userId;
 
-      console.log('ownerId', ownerId);
+      console.log("ownerId", ownerId);
 
       const wish = new Wish({
         name,
@@ -26,40 +26,34 @@ class WishController {
     }
   }
 
-  async getWish(req, res) {
+  async deleteWish(req, res) {
+    console.log(req.params.id);
     try {
-      const { id: wishId } = req.params;
-      const wish = await Wish.findById(wishId);
-      return res.json(wish);
+      await Wish.findByIdAndDelete(req.params.id);
+      return res.json({ message: "Виш удалён" });
     } catch (e) {
-      res.status(400).json({ message: "Ошибка получения виша", error: e });
-    }
-  }
-
-  async getMyWishes(req, res) {
-    try {
-      const { userId } = req.user;
-      console.log(userId);
-
-      const wishes = await Wish.find({ ownerId: userId });
-      return res.json(wishes);
-    } catch (e) {
-      res
-        .status(400)
-        .json({ message: "Ошибка получения списка вишей", error: e });
+      res.status(400).json({ message: "Ошибка удаления виша", error: e });
     }
   }
 
   async getWishesByUser(req, res) {
-    console.log(req.user)
+    console.log('--- ПОЛУЧАЮ СПИСОК ---', req.user);
     try {
       const { userId } = req.user;
       console.log(userId);
 
       const wishes = await Wish.find({
         ownerId: userId,
-      });
-      return res.json(wishes);
+      }).lean();
+
+      const modifiedWishes = wishes.map((wish) => ({
+        ...wish,
+        id: wish._id,
+        _id: undefined,
+      }));
+      console.log('САМ СПИСОК: ', modifiedWishes);
+
+      return res.json(modifiedWishes);
     } catch (e) {
       res
         .status(400)

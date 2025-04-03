@@ -7,10 +7,6 @@ import { validationResult } from "express-validator";
 const secret = config.secret;
 
 class UserController {
-  async authorizathion(req, res) {
-    // тут авторизация и возвращение токенов
-  }
-
   async registration(req, res) {
     try {
       const errors = validationResult(req);
@@ -62,32 +58,6 @@ class UserController {
     }
   }
 
-  async updateUser(req, res) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json(errors);
-      }
-
-      const { _id, login, name, birthday } = req.body;
-      const user = await User.findByIdAndUpdate(
-        _id,
-        { login, name, birthday },
-        { new: true, runValidators: true }
-      );
-
-      if (!user) {
-        return res
-          .status(400)
-          .json({ message: `Пользователь ${_id} не найден` });
-      }
-
-      return res.json({ message: "Данные успешно обновлены" });
-    } catch (e) {
-      res.status(500).json({ message: "Ошибка сервера", error: e.message });
-    }
-  }
-
   async getUser(req, res) {
     console.log("user", req.user);
 
@@ -104,12 +74,66 @@ class UserController {
       }
 
       const { _id, login, name, birthday, friends } = user;
-      const response = {  id: _id, login, name, birthday, friends };
+      const response = { id: _id, login, name, birthday, friends };
 
       return res.json(response);
     } catch (e) {
       console.error("Ошибка при получении пользователя:", e);
       res.status(500).json({ message: "Ошибка сервера", error: e });
+    }
+  }
+
+  async getUsersFriends(req, res) {
+    console.log("Друзья", req.user);
+    try {
+      const { userId } = req.user;
+      const user = await User.findById(userId).populate("friends");
+
+      if (!user)
+        return res.status(400).json({ message: "Пользователь не найден" });
+
+      return res.json(user.friends);
+    } catch (e) {
+      console.error("Ошибка при получении друзей пользователя:", e);
+      res.status(500).json({ message: "Ошибка сервера", error: e });
+    }
+  }
+
+  async deleteFriend(req, res) {
+    const userId = req.user.userId;
+    const friendId = req.params.id;
+    console.log(userId, friendId);
+
+    if(!friendId) return res.status(400).json({ message: "id друга не определен" });
+
+    try {
+      await User.updateOne({ _id: userId }, { $pull: { friends: friendId } });
+      return res.json({ message: "Бывший друг удалён" });
+    } catch (e) {
+      res.status(400).json({ message: "Ошибка удаления друга", error: e });
+    }
+  }
+
+  async updateUser(req, res) {
+    try {
+      console.log(req.body);
+
+      const { id, login, name, birthday, friends } = req.body;
+      const user = await User.findByIdAndUpdate(
+        id,
+        { login, name, birthday, friends },
+        { new: true, runValidators: true }
+      );
+
+      if (!user) {
+        return res
+          .status(400)
+          .json({ message: `Пользователь ${_id} не найден` });
+      }
+
+      return res.json({ message: "Данные успешно обновлены" });
+    } catch (e) {
+      res.status(500).json({ message: "Ошибка сервера", error: e.message });
     }
   }
 }
