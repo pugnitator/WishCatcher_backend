@@ -13,8 +13,6 @@ export default function authMiddleware(req, res, next) {
     const decodedData = jwt.verify(token, config.secret);
     req.user = decodedData;
 
-    // console.log('user', req.user);
-
     next();
   } catch (e) {
     console.log(e);

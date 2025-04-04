@@ -3,6 +3,7 @@ import { config } from "../../config.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
+import { filterUserData } from "../utils/userUtils.js";
 
 const secret = config.secret;
 
@@ -59,10 +60,10 @@ class UserController {
   }
 
   async getUser(req, res) {
-    console.log("user", req.user);
+    console.log("---GET USER---", "параметр", req);
 
     try {
-      const { userId } = req.user;
+      const userId = req.params.id || req.user.userId;
       console.log(userId);
 
       const user = await User.findById(userId);
@@ -73,8 +74,7 @@ class UserController {
         return res.status(404).json({ message: "Пользователь не найден" });
       }
 
-      const { _id, login, name, birthday, friends } = user;
-      const response = { id: _id, login, name, birthday, friends };
+      const response = filterUserData(user);
 
       return res.json(response);
     } catch (e) {
@@ -89,10 +89,19 @@ class UserController {
       const { userId } = req.user;
       const user = await User.findById(userId).populate("friends");
 
-      if (!user)
+      if (!user) {
         return res.status(400).json({ message: "Пользователь не найден" });
+      }
 
-      return res.json(user.friends);
+      const formatedFriends = user.friends.map((friend) => ({
+        id: friend._id,
+        name: friend.name,
+        login: friend.login,
+        birthday: friend.birthday,
+      }));
+
+      return res.json(formatedFriends);
+      // return res.json(user.friends);
     } catch (e) {
       console.error("Ошибка при получении друзей пользователя:", e);
       res.status(500).json({ message: "Ошибка сервера", error: e });
@@ -102,9 +111,9 @@ class UserController {
   async deleteFriend(req, res) {
     const userId = req.user.userId;
     const friendId = req.params.id;
-    console.log(userId, friendId);
 
-    if(!friendId) return res.status(400).json({ message: "id друга не определен" });
+    if (!friendId)
+      return res.status(400).json({ message: "id друга не определен" });
 
     try {
       await User.updateOne({ _id: userId }, { $pull: { friends: friendId } });
@@ -115,12 +124,17 @@ class UserController {
   }
 
   async updateUser(req, res) {
-    try {
-      console.log(req.body);
+    // console.log("---SHIT---", req.body, req.user);
 
-      const { id, login, name, birthday, friends } = req.body;
+    try {
+      // console.log("---SHIT--- в try");
+      const { userId } = req.user;
+      const { login, name, birthday, friends } = req.body;
+
+      console.log("---ДАННЫЕ ЮЗЕРА ИЗ БОДИ---", login, name);
+
       const user = await User.findByIdAndUpdate(
-        id,
+        userId,
         { login, name, birthday, friends },
         { new: true, runValidators: true }
       );
@@ -128,10 +142,13 @@ class UserController {
       if (!user) {
         return res
           .status(400)
-          .json({ message: `Пользователь ${_id} не найден` });
+          .json({ message: `Пользователь ${id} не найден` });
       }
 
-      return res.json({ message: "Данные успешно обновлены" });
+      return res.json({
+        message: "Данные успешно обновлены",
+        user: filterUserData(user),
+      });
     } catch (e) {
       res.status(500).json({ message: "Ошибка сервера", error: e.message });
     }

@@ -19,7 +19,10 @@ class WishController {
 
       await wish.save();
 
-      return res.json({ message: "Пожелание успешно создано" });
+      return res.json({
+        message: "Пожелание успешно создано",
+        wish: wish,
+      });
     } catch (e) {
       console.error(e);
       res.status(400).json({ message: "Ошибка создания виша", error: e });
@@ -37,9 +40,9 @@ class WishController {
   }
 
   async getWishesByUser(req, res) {
-    console.log('--- ПОЛУЧАЮ СПИСОК ---', req.user);
+    // console.log("--- ПОЛУЧАЮ СПИСОК ---", req.user, req.params.id);
     try {
-      const { userId } = req.user;
+      const userId = req.params.id === "me" ? req.user.userId : req.params.id;
       console.log(userId);
 
       const wishes = await Wish.find({
@@ -51,7 +54,7 @@ class WishController {
         id: wish._id,
         _id: undefined,
       }));
-      console.log('САМ СПИСОК: ', modifiedWishes);
+      // console.log('САМ СПИСОК: ', modifiedWishes);
 
       return res.json(modifiedWishes);
     } catch (e) {
