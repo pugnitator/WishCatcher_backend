@@ -1,11 +1,8 @@
 import User from "../db_models/User.js";
-import { config } from "../../config.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
 import { filterUserData } from "../utils/userUtils.js";
-
-const secret = config.secret;
 
 class UserController {
   async registration(req, res) {
@@ -55,7 +52,8 @@ class UserController {
       const token = generateAccessToken(user._id);
       return res.json({ token, user });
     } catch (e) {
-      res.status(500).json();
+      console.error(e);
+      res.status(500).json({ message: 'Ошибка на сервере' });
     }
   }
 
@@ -124,10 +122,8 @@ class UserController {
   }
 
   async updateUser(req, res) {
-    // console.log("---SHIT---", req.body, req.user);
 
     try {
-      // console.log("---SHIT--- в try");
       const { userId } = req.user;
       const { login, name, birthday, friends } = req.body;
 
@@ -159,8 +155,13 @@ const generateAccessToken = (userId) => {
   const payload = {
     userId,
   };
+  if (!process.env.SECRET) {
+    throw new Error("SECRET is not defined");
+  }
+  const token = jwt.sign(payload, process.env.SECRET, { expiresIn: "24h" });
+  console.log(token);
 
-  return jwt.sign(payload, secret, { expiresIn: "24h" });
+  return token;
 };
 
 export default new UserController();
