@@ -1,5 +1,4 @@
 import jwt from "jsonwebtoken";
-import { config } from "../../config.js";
 
 export default function authMiddleware(req, res, next) {
   if (req.method === "OPTIONS") {
@@ -10,7 +9,8 @@ export default function authMiddleware(req, res, next) {
     if (!token) {
       return res.status(403).json({ message: "Пользователь не авторизован" });
     }
-    const decodedData = jwt.verify(token, config.secret);
+    console.log("SECRET in authMiddleware:", process.env.SECRET, "Token to verify:", token);
+    const decodedData = jwt.verify(token, process.env.SECRET);
     req.user = decodedData;
 
     next();
